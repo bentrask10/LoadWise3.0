@@ -44,53 +44,59 @@ struct ContentView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
-                    Text("LoadWise Calculator")
+                    Text("LOADWISE")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-
-                    // Dashboard Title
-                    Text("LoadWise Dashboard")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .padding(.top, 5)
-
-                    //  Three Key Insight Cards
-                    HStack(spacing: 15) {
-                        // Load Score Card
-                        DashboardCard(
-                            title: "Load Score",
-                            value: acuteChronicRatio ?? 0.0,
-                            unit: "AC Ratio",
-                            threshold: 1.5,
-                            lowText: "Good Training",
-                            highText: "Overtraining Risk",
-                            color: .blue
-                        )
-
-                        // Recovery Status Card
-                        DashboardCard(
-                            title: "Recovery",
-                            value: avgHeartRateVariability ?? 0.0,
-                            unit: "HRV (ms)",
-                            threshold: 50,
-                            lowText: "Need More Rest",
-                            highText: "Recovered",
-                            color: .green
-                        )
-
-                        // Injury Risk Score Card
-                        DashboardCard(
-                            title: "Injury Risk",
-                            value: injuryRiskScore ?? 0.0,
-                            unit: "/100",
-                            threshold: 60,
-                            lowText: "Low Risk",
-                            highText: "High Risk",
-                            color: .red
-                        )
+                    
+                    VStack(spacing: 10) {
+                        Text("📊 LoadWise Dashboard")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                        
+                        GeometryReader { geometry in
+                            HStack(spacing: 12) {
+                                DashboardCard(
+                                    title: "Load Score",
+                                    value: String(format: "%.2f", acuteChronicRatio ?? 0.0),
+                                    unit: "AC Ratio",
+                                    threshold: 1.5,
+                                    lowText: "Good Training",
+                                    highText: "Overtraining Risk",
+                                    color: .blue,
+                                    details: "AC Ratio compares short-term training load to long-term trends."
+                                )
+                                .frame(width: geometry.size.width / 3 - 10) // Even spacing
+                                
+                                DashboardCard(
+                                    title: "Recovery",
+                                    value: String(format: "%.2f", avgHeartRateVariability ?? 0.0),
+                                    unit: "HRV (ms)",
+                                    threshold: 50,
+                                    lowText: "Need More Rest",
+                                    highText: "Recovered",
+                                    color: .green,
+                                    details: "HRV measures recovery. A higher value means better recovery."
+                                )
+                                .frame(width: geometry.size.width / 3 - 10)
+                                
+                                DashboardCard(
+                                    title: "Injury Risk",
+                                    value: String(format: "%.2f", injuryRiskScore ?? 0.0),
+                                    unit: "/100",
+                                    threshold: 60,
+                                    lowText: "Low Risk",
+                                    highText: "High Risk",
+                                    color: .red,
+                                    details: "Your Injury Risk Score is based on training spikes and recovery."
+                                )
+                                .frame(width: geometry.size.width / 3 - 10)
+                            }
+                        }
+                        .frame(height: 150) // Gives proper height to HStack
+                        .padding(.horizontal, 10) // Adds padding so cards don’t touch screen edges
                     }
                 }
-                .padding()
+
 
                     Button(action: generateSyntheticData) {
                         Text("Generate Sample Data")
@@ -339,40 +345,7 @@ struct ContentView: View {
                 }
             }
         }
-    }
-
-struct DashboardCard: View {
-    let title: String
-    let value: Double
-    let unit: String
-    let threshold: Double
-    let lowText: String
-    let highText: String
-    let color: Color
-
-    var body: some View {
-        VStack {
-            Text(title)
-                .font(.headline)
-                .padding(.top, 5)
-
-            Text(String(format: "%.2f", value) + " " + unit)
-                .font(.title)
-                .fontWeight(.bold)
-                .foregroundColor(value > threshold ? .red : .green)
-
-            Text(value > threshold ? highText : lowText)
-                .font(.subheadline)
-                .foregroundColor(.gray)
-        }
-        .frame(width: 120, height: 120)
-        .background(color.opacity(0.2))
-        .cornerRadius(12)
-        .shadow(radius: 3)
-    }
-}
-
-
+    
     private func generateSyntheticData() {
         runHistory.removeAll() // Clear existing data
         let calendar = Calendar.current
@@ -539,3 +512,79 @@ struct DashboardCard: View {
     }
 
 
+
+    
+    }
+
+struct DashboardCard: View {
+    let title: String
+    let value: String
+    let unit: String
+    let threshold: Double
+    let lowText: String
+    let highText: String
+    let color: Color
+    let details: String
+    
+    @State private var showDetails = false
+    
+    var body: some View {
+        VStack {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.black)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity) // Ensures text wraps inside the card
+            
+            Text(value)
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundColor(threshold > Double(value) ?? 0 ? .green : .red)
+            
+            Text(unit)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .lineLimit(1) // Prevents text cutoff but keeps it readable
+            
+            Text(threshold > Double(value) ?? 0 ? lowText : highText)
+                .font(.caption)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .frame(minWidth: 120, maxWidth: .infinity, minHeight: 120)
+        .padding()
+        .background(color.opacity(0.2))
+        .cornerRadius(12)
+        .shadow(radius: 3)
+        .onTapGesture {
+            showDetails = true
+        }
+        .sheet(isPresented: $showDetails) {
+            VStack(spacing: 20) {
+                Text(title)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text(details)
+                    .font(.body)
+                    .padding()
+                    .multilineTextAlignment(.center)
+                
+                Button("Close") {
+                    showDetails = false
+                }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
+            .padding()
+        }
+    }
+}
+
+
+
+    
